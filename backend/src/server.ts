@@ -1,4 +1,5 @@
 import { createServer } from './app';
+import { startStockPriceFetcher } from './services/stockFetcherService';
 
 async function start() {
     
@@ -10,3 +11,4 @@ async function start() {
 }
 
 start();
+startStockPriceFetcher();
