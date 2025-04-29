@@ -1,7 +1,7 @@
+// backend/src/services/stockFetcherService.ts
 import axios from 'axios';
-import Redis from 'ioredis';
+import redis from '../db/redis';
 
-const redis = new Redis();
 const BASE_URL = 'http://localhost:3000';
 
 async function fetchAndCacheStockPrices() {
@@ -9,22 +9,22 @@ async function fetchAndCacheStockPrices() {
     const response = await axios.get(`${BASE_URL}/stocks`);
     const stocks = response.data;
 
-    const pipeline = redis.pipeline(); // start batching
+    const pipeline = redis.pipeline();
 
     for (const stock of stocks) {
       const redisKey = `stock:${stock.symbol}`;
       const redisValue = JSON.stringify(stock);
-      pipeline.set(redisKey, redisValue); // add to batch
+      pipeline.set(redisKey, redisValue);
     }
 
-    await pipeline.exec(); // execute all commands in one go
-    console.log(`✅ Cached ${stocks.length} stocks to Redis`);
-
+    await pipeline.exec();
+    console.log(`✅ Updated ${stocks.length} stocks`);
   } catch (error) {
-    console.error('❌ Error fetching stock prices:', error);
+    console.error('❌ Price update error:', error);
   }
 }
 
 export function startStockPriceFetcher() {
-  setInterval(fetchAndCacheStockPrices, 1000);
+  fetchAndCacheStockPrices();
+  setInterval(() => fetchAndCacheStockPrices(), 1000);
 }

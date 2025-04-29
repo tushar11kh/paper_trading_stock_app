@@ -1,5 +1,5 @@
-import { gql } from 'apollo-server';
-
+//backend/src/graphql/typeDefs/stockTypeDef.ts
+import { gql } from 'graphql-tag';
 export const stockTypeDef = gql`
   type Stock {
     name: String!

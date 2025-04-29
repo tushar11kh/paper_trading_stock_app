@@ -4,8 +4,8 @@ const redis = new Redis();
 
 export const stockResolvers = {
   Query: {
-    getStock: async (_: any, { symbol }: { symbol: string }) => {
-      const data = await redis.get(`stock:${symbol}`);
+    getStock: async (_: any, { symbol }: { symbol: string },context:any) => {
+      const data = await context.redis.get(`stock:${symbol}`);
       return data ? JSON.parse(data) : null;
     },
     getAllStocks: async () => {
@@ -16,7 +16,7 @@ export const stockResolvers = {
       keys.forEach((key) => pipeline.get(key));
       
       const results = await pipeline.exec();
-      if (!results) return []; // Handle null case
+      if (!results) return []; // Handle null cases
 
       return results.map(([err, value]) => {
         if (err) throw err; // Handle pipeline errors

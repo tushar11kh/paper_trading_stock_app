@@ -1,3 +1,4 @@
+//backend/src/db/runMigrations.ts
 import pool from './index';
 import fs from 'fs';
 import path from 'path';

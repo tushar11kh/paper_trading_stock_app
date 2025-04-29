@@ -1,3 +1,5 @@
+--backend/src/graphql/resolvers/stockResolver.ts
+
 -- 1. Users
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
