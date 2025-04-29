@@ -1,37 +1,24 @@
 // backend/src/app.ts
-import { createYoga } from 'graphql-yoga';
-import dotenv from 'dotenv';
+import { createServer as createHttpServer } from 'http';
+import { ApolloServer } from 'apollo-server-express';
+import express from 'express';
 import { schema } from './graphql/schema';
-import pool from './db/';
+import { createSubscriptionServer } from './graphql/subscriptions';
 import redis from './db/redis';
-import { createContext } from './graphql/context';
 
-dotenv.config();
+export async function createApolloServer() {
+  const app = express();
+  const httpServer = createHttpServer(app);
 
-export async function createYogaServer() {
-  try {
-    const { rows } = await pool.query('SELECT NOW()');
-    await redis.ping();
-    
-    console.log('✅ Database connected at:', rows[0].now);
-    console.log('✅ Redis connected');
+  const apolloServer = new ApolloServer({
+    schema,
+    context: ({ req }) => ({ req, redis }),
+  });
 
-    return createYoga({
-      schema,
-      context: ({ request }) => ({
-        req: request,
-        redis,
-        pool
-      }),
-      graphiql: {
-        title: 'Stock Trading API',
-        subscriptionsProtocol: 'WS' // This enables WS in GraphiQL
-      },
-      // WebSocket is automatically enabled by default
-      // No need for explicit subscriptions config
-    });
-  } catch (error) {
-    console.error('❌ Failed to connect to services', error);
-    process.exit(1);
-  }
+  await apolloServer.start();
+  apolloServer.applyMiddleware({ app });
+
+  createSubscriptionServer(httpServer);
+
+  return httpServer;
 }

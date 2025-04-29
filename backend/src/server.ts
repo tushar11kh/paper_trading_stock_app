@@ -1,54 +1,21 @@
 // backend/src/server.ts
-import { createYoga } from 'graphql-yoga';
-import { createServer } from 'node:http';
-import { schema } from './graphql/schema';
+import { createApolloServer } from './app';
 import { startStockPriceFetcher } from './services/stockFetcherService';
-import { createContext } from './graphql/context';
-import dotenv from 'dotenv';
 
-dotenv.config();
-
-async function initializeServer() {
+async function start() {
   try {
-    const context = await createContext();
+    const httpServer = await createApolloServer();
     
-    const yoga = createYoga({
-      schema,
-      context,
-      graphiql: {
-        title: 'Stock Trading API',
-      },
-      logging: {
-        debug: (...args) => console.debug('[DEBUG]', ...args),
-        info: (...args) => console.info('[INFO]', ...args),
-        warn: (...args) => console.warn('[WARN]', ...args),
-        error: (...args) => console.error('[ERROR]', ...args)
-      }
-    });
-
-    const httpServer = createServer(yoga);
-
-    const shutdown = async () => {
-      console.log('🚦 Shutting down gracefully...');
-      await context.pool.end();
-      context.redis.disconnect();
-      httpServer.close();
-      process.exit(0);
-    };
-
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
-
     httpServer.listen(4000, () => {
-      console.log('🚀 Server ready at http://localhost:4000/graphql');
-      startStockPriceFetcher(); // Start the stock price fetcher
+      console.log(`🚀 Server ready at http://localhost:4000/graphql`);
+      console.log(`🚀 Subscriptions ready at ws://localhost:4000/graphql`);
     });
-
-    return httpServer;
+    
+    startStockPriceFetcher();
   } catch (error) {
-    console.error('❌ Server initialization failed:', error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
-initializeServer().catch(console.error);
+start();
