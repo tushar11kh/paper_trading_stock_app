@@ -37,8 +37,9 @@ export const stockTypeDef = gql`
   input PlaceOrderInput {
     symbol: String!
     quantity: Int!
-    price: Float
-    orderType: String!
+    price: Float  # Make price optional for market orders
+    orderType: String!  # "MARKET" or "LIMIT"
+    side: String!  # "BUY" or "SELL"
   }
 
   type Subscription {
@@ -49,9 +50,11 @@ export const stockTypeDef = gql`
     getStock(symbol: String!): Stock
     getStockHistory(symbol: String!, timeframe: String!): [StockHistory!]!
     getPortfolio(userId: ID!): [Portfolio!]!
+    getPendingOrders: [Order!]!
   }
 
   type Mutation {
     placeOrder(input: PlaceOrderInput!): Order!
+    cancelOrder(orderId: ID!): Order!
   }
 `;

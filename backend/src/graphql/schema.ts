@@ -7,9 +7,12 @@ import { stockTypeDef } from './typeDefs/stockTypeDef';
 import { stockResolvers } from './resolvers/stockResolver';
 import { tradingResolvers } from './resolvers/tradingResolver';
 
+import { authTypeDef } from './typeDefs/authTypeDef';
+import { authResolvers } from './resolvers/authResolver';
+
 export const schema = makeExecutableSchema(
     {
-        typeDefs: [helloTypeDef, stockTypeDef],
-        resolvers: [helloResolver, stockResolvers, tradingResolvers],
+        typeDefs: [helloTypeDef, stockTypeDef, authTypeDef],
+        resolvers: [helloResolver, stockResolvers, tradingResolvers, authResolvers],
     }
 );
