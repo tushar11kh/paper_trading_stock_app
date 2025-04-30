@@ -5,10 +5,11 @@ import { helloResolver } from './resolvers/helloResolver';
 
 import { stockTypeDef } from './typeDefs/stockTypeDef';
 import { stockResolvers } from './resolvers/stockResolver';
+import { tradingResolvers } from './resolvers/tradingResolver';
 
 export const schema = makeExecutableSchema(
     {
-        typeDefs: [helloTypeDef,stockTypeDef],
-        resolvers: [helloResolver,stockResolvers],
+        typeDefs: [helloTypeDef, stockTypeDef],
+        resolvers: [helloResolver, stockResolvers, tradingResolvers],
     }
 );

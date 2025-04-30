@@ -4,7 +4,7 @@ import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import { schema } from './graphql/schema';
 import { createSubscriptionServer } from './graphql/subscriptions';
-import redis from './db/redis';
+import pool from './db';
 
 export async function createApolloServer() {
   const app = express();
@@ -12,7 +12,7 @@ export async function createApolloServer() {
 
   const apolloServer = new ApolloServer({
     schema,
-    context: ({ req }) => ({ req, redis }),
+    context: ({ req }) => ({ req, pool }),
   });
 
   await apolloServer.start();

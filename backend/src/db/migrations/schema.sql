@@ -8,16 +8,25 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Stocks
+-- 2. Stocks (Static metadata + Historical prices)
 CREATE TABLE IF NOT EXISTS stocks (
   id SERIAL PRIMARY KEY,
   symbol VARCHAR(10) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
-  current_price NUMERIC DEFAULT 0,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_active BOOLEAN DEFAULT true, -- true: available for trading, false: not available (delisted/suspended)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Orders
+-- 3. Stock Prices (For charts and historical data)
+CREATE TABLE IF NOT EXISTS stock_prices (
+  id SERIAL PRIMARY KEY,
+  stock_id INTEGER REFERENCES stocks(id),
+  price NUMERIC NOT NULL,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(stock_id, timestamp)
+);
+
+-- 4. Orders
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
@@ -29,7 +38,7 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Trades
+-- 5. Trades
 CREATE TABLE IF NOT EXISTS trades (
   id SERIAL PRIMARY KEY,
   buy_order_id INTEGER REFERENCES orders(id),
@@ -40,7 +49,7 @@ CREATE TABLE IF NOT EXISTS trades (
   traded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Portfolios
+-- 6. Portfolios
 CREATE TABLE IF NOT EXISTS portfolios (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),

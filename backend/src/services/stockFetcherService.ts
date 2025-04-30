@@ -1,44 +1,50 @@
 import axios from 'axios';
-import Redis from 'ioredis';
 import { pubsub } from '../graphql/pubsub';
+import pool from '../db';
 
-const redis = new Redis();
 const BASE_URL = 'http://localhost:3000';
 
-// In stockFetcherService.ts
-async function fetchAndCacheStockPrices() {
+async function fetchAndPublishStockPrices() {
   try {
     const response = await axios.get(`${BASE_URL}/stocks`);
-    const stocks = response.data; // This is the array
+    const stocks = response.data;
     console.log('📡 Fetched stocks:', stocks.length);
 
-    const pipeline = redis.pipeline();
-    for (const stock of stocks) { // Here each item is 'stock'
+    for (const stock of stocks) {
       if (!stock?.symbol || !stock?.price) {
         console.error('❌ Invalid stock format:', stock);
         continue;
       }
 
-      const redisKey = `stock:${stock.symbol}`;
       const stockData = {
         symbol: stock.symbol,
         price: stock.price,
-        name: stock.name || 'Unknown'
+        name: stock.name || 'Unknown',
+        isActive: stock.is_active ?? true
       };
 
-      pipeline.set(redisKey, JSON.stringify(stockData));
+      // Store historical price in PostgreSQL
+      try {
+        await pool.query(
+          'INSERT INTO stock_prices (stock_id, price) ' +
+          'SELECT id, $1 FROM stocks WHERE symbol = $2',
+          [stock.price, stock.symbol]
+        );
+      } catch (error) {
+        console.error('Error storing historical price:', error);
+      }
       
+      // Publish real-time update
       pubsub.publish(`PRICE_${stock.symbol}`, { 
-        priceUpdate: stockData // Must match GraphQL type
+        priceUpdate: stockData
       });
     }
-    await pipeline.exec();
-    console.log('✅ Prices updated');
+    console.log('✅ Prices updated and published');
   } catch (error) {
     console.error('❌ Fetch error:', error);
   }
 }
 
 export function startStockPriceFetcher() {
-  setInterval(fetchAndCacheStockPrices, 2000);
+  setInterval(fetchAndPublishStockPrices, 2000);
 }
