@@ -188,4 +188,12 @@ This architecture provides:
 4. Scalable infrastructure
 5. Reliable order execution
 
-Would you like me to elaborate on any specific aspect of the system?
+### Flutter architecture
+
+graph TD
+UI[Widgets / Screens] -->|interact with| Provider[Riverpod Providers]
+Provider -->|fetch from| Service[API/DB/Auth Service]
+Service -->|return data| Model[Typed Models]
+Model --> Provider --> UI
+
+
