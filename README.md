@@ -196,4 +196,20 @@ Provider -->|fetch from| Service[API/DB/Auth Service]
 Service -->|return data| Model[Typed Models]
 Model --> Provider --> UI
 
+graph TD
+  UI[🏠 UI Layer (Screens & Widgets)]
+    -->|📲 User actions| Provider[📦 Riverpod Providers]
+
+  Provider
+    -->|🔌 Fetch data from| Service[🔧 Services (API / DB / Auth)]
+
+  Service
+    -->|📤 Return Data| Model[🧩 Typed Models]
+
+  Model
+    --> Provider
+    --> UI
+
+
+
 
