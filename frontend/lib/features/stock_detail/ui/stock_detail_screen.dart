@@ -62,9 +62,13 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     priceChange = widget.initialChange;
     isPricePositive = widget.isPositive;
     quantityController.text = quantity.toString();
-    _fetchStockId();
-    // Start periodic fetching of historical prices
-    _fetchHistoricalPricesPeriodically();
+    _fetchStockId().then((_) {
+      // Ensure the chart is updated immediately after fetching the stock ID
+      _fetchHistoricalPrices().then((_) {
+        // Start periodic fetching only after the first fetch is complete
+        _fetchHistoricalPricesPeriodically();
+      });
+    });
   }
 
   @override
@@ -76,9 +80,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   }
 
   void _fetchHistoricalPricesPeriodically() {
-    // Fetch immediately, then every 5 seconds
+    // Fetch immediately, then every 5 minutes
     _fetchHistoricalPrices();
-    chartTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    chartTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _fetchHistoricalPrices();
     });
   }
@@ -185,6 +189,13 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     }
   }
 
+  Color _getChartLineColor() {
+    if (historicalPrices.isEmpty) return Colors.blue; // Default color if no data
+    final oldestPrice = historicalPrices.first['price'] as double;
+    final newestPrice = historicalPrices.last['price'] as double;
+    return oldestPrice > newestPrice ? Colors.red : Colors.green;
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalAmount = currentPrice * quantity;
@@ -239,7 +250,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                                     FlSpot(i.toDouble(), historicalPrices[i]['price'] as double),
                                 ],
                                 isCurved: true,
-                                color: Colors.blue,
+                                color: _getChartLineColor(), // Use the dynamic color
                                 barWidth: 2,
                                 dotData: FlDotData(show: false),
                               ),
