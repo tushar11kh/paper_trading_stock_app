@@ -1,9 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:PaperTradeApp/common/widgets/stock_card.dart';
 import 'package:PaperTradeApp/features/home/logic/stock_gains_card.dart';
+import 'package:PaperTradeApp/core/graphql/graphql_client.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,33 +26,51 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchRandomStocks() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://localhost:3000/stocks'),
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> stocks = json.decode(response.body);
-        if (stocks.isNotEmpty) {
-          final randomIndexes = _getUniqueRandomIndexes(stocks.length, 10);
-          setState(() {
-            randomStocks = randomIndexes
-                .map((index) => stocks[index] as Map<String, dynamic>)
-                .toList();
-            isLoading = false;
-          });
-        }
-      } else {
-        throw Exception('Failed to load stocks');
+  const String query = r'''
+    query {
+      getAllStocks {
+        id
+        symbol
+        name
+        price
+        isActive
       }
-    } catch (e) {
+    }
+  ''';
+
+  try {
+    final client = await GraphQLConfig.initializeClient(); // Use your config class
+    final result = await client.query(
+      QueryOptions(
+        document: gql(query),
+      ),
+    );
+
+    if (result.hasException) {
+      throw result.exception!;
+    }
+
+    final List<dynamic> stocks = result.data?['getAllStocks'] ?? [];
+
+    if (stocks.isNotEmpty) {
+      final randomIndexes = _getUniqueRandomIndexes(stocks.length, 10);
       setState(() {
+        randomStocks = randomIndexes
+            .map((index) => stocks[index] as Map<String, dynamic>)
+            .toList();
         isLoading = false;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching stock data: $e')));
     }
+  } catch (e) {
+    setState(() {
+      isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error fetching stock data: $e')),
+    );
   }
+}
+
 
   List<int> _getUniqueRandomIndexes(int max, int count) {
     final random = Random();

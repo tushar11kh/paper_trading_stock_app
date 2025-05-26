@@ -2,6 +2,7 @@ import { gql } from 'apollo-server';
 
 export const stockTypeDef = gql`
   type Stock {
+    id: ID!
     name: String!
     symbol: String!
     price: Float!
@@ -52,6 +53,8 @@ export const stockTypeDef = gql`
     getPortfolio(userId: ID!): [Portfolio!]!
     getPendingOrders: [Order!]!
     getHistoricalPrices(stockId: ID!): [StockPrice!]!
+    getStockIdBySymbol(symbol: String!): ID!
+    getAllStocks: [Stock!]!
   }
 
   type StockPrice {

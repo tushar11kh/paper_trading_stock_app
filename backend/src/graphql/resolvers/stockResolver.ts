@@ -101,6 +101,48 @@ export const stockResolvers = {
         return [];
       }
     },
+
+    getStockIdBySymbol: async (_: unknown, { symbol }: { symbol: string }) => {
+      try {
+        const result = await pool.query(
+          `SELECT id
+           FROM stocks
+           WHERE symbol = $1`,
+          [symbol]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error(`Stock with symbol "${symbol}" not found`);
+        }
+
+        return result.rows[0].id;
+      } catch (error) {
+        console.error('Error fetching stock ID by symbol:', error);
+        throw error;
+      }
+    },
+
+    getAllStocks: async () => {
+      try {
+        const result = await pool.query(
+          `SELECT DISTINCT ON (s.id) s.id, s.symbol, s.name, s.is_active, sp.price
+           FROM stocks s
+           LEFT JOIN stock_prices sp ON s.id = sp.stock_id
+           ORDER BY s.id, sp.timestamp DESC`
+        );
+
+        return result.rows.map(row => ({
+          id: row.id,
+          symbol: row.symbol,
+          name: row.name,
+          price: Number(row.price),
+          isActive: row.is_active
+        }));
+      } catch (error) {
+        console.error('Error fetching all stocks:', error);
+        return [];
+      }
+    },
   },
   Subscription: {
     priceUpdate: {

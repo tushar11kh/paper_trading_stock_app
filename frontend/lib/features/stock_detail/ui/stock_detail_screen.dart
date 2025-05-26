@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:PaperTradeApp/core/graphql/graphql_client.dart';
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:PaperTradeApp/core/graphql/graphql_client.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
@@ -30,6 +33,8 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   int quantity = 1;
   Color? flashColor;
   Timer? timer;
+  String? stockId;
+
   final TextEditingController quantityController = TextEditingController();
 
   static final _subscriptionDocument = gql(r'''
@@ -40,6 +45,15 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     }
   ''');
 
+  static final _stockIdQuery = gql(r'''
+    query($symbol: String!) {
+      getStockIdBySymbol(symbol: $symbol)
+    }
+  ''');
+
+  List<Map<String, dynamic>> historicalPrices = [];
+  Timer? chartTimer;
+
   @override
   void initState() {
     super.initState();
@@ -48,13 +62,82 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     priceChange = widget.initialChange;
     isPricePositive = widget.isPositive;
     quantityController.text = quantity.toString();
+    _fetchStockId();
+    // Start periodic fetching of historical prices
+    _fetchHistoricalPricesPeriodically();
   }
 
   @override
   void dispose() {
     timer?.cancel();
+    chartTimer?.cancel();
     quantityController.dispose();
     super.dispose();
+  }
+
+  void _fetchHistoricalPricesPeriodically() {
+    // Fetch immediately, then every 5 seconds
+    _fetchHistoricalPrices();
+    chartTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _fetchHistoricalPrices();
+    });
+  }
+
+  Future<void> _fetchHistoricalPrices() async {
+    if (stockId == null) return;
+    const String query = r'''
+      query(
+        $stockId: ID!
+      ) {
+        getHistoricalPrices(stockId: $stockId) {
+          price
+          timestamp
+        }
+      }
+    ''';
+    final client = await GraphQLConfig.initializeClient();
+    final result = await client.query(
+      QueryOptions(
+        document: gql(query),
+        variables: {'stockId': stockId},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ),
+    );
+    if (result.hasException) {
+      debugPrint('Error fetching historical prices: \\${result.exception}');
+      return;
+    }
+    final List<dynamic> prices = result.data?['getHistoricalPrices'] ?? [];
+    setState(() {
+      historicalPrices = prices.take(1000).map((e) => {
+        'price': (e['price'] as num).toDouble(),
+        'timestamp': e['timestamp'],
+      }).toList();
+    });
+  }
+
+  Future<void> _fetchStockId() async {
+    final client = await GraphQLConfig.initializeClient();
+
+    final result = await client.query(
+      QueryOptions(
+        document: _stockIdQuery,
+        variables: {'symbol': widget.symbol},
+      ),
+    );
+
+    if (result.hasException) {
+      debugPrint("❌ Failed to get stockId: ${result.exception.toString()}");
+      return;
+    }
+
+    final id = result.data?['getStockIdBySymbol'];
+    if (id != null) {
+      setState(() {
+        stockId = id;
+      });
+      debugPrint("✅ Fetched stockId: $stockId");
+    }
   }
 
   String _getPercentageChange() {
@@ -67,7 +150,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   void _handlePriceUpdate(Map<String, dynamic> data) {
     final newPrice = data['price']?.toDouble();
     if (newPrice != null && newPrice != currentPrice) {
-      // Set initial price only once
       initialPrice ??= newPrice;
 
       setState(() {
@@ -138,6 +220,32 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 20),
+                // --- Line Chart ---
+                SizedBox(
+                  height: 200,
+                  child: historicalPrices.isEmpty
+                      ? const Center(child: CircularProgressIndicator())
+                      : LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            titlesData: FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: [
+                                  for (int i = 0; i < historicalPrices.length; i++)
+                                    FlSpot(i.toDouble(), historicalPrices[i]['price'] as double),
+                                ],
+                                isCurved: true,
+                                color: Colors.blue,
+                                barWidth: 2,
+                                dotData: FlDotData(show: false),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -266,9 +374,12 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement buy logic with GraphQL mutation
-                        },
+                        onPressed: stockId == null
+                            ? null
+                            : () {
+                                // TODO: Use stockId for buy mutation
+                                debugPrint("Buy stockId: $stockId, qty: $quantity");
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -288,9 +399,12 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement sell logic with GraphQL mutation
-                        },
+                        onPressed: stockId == null
+                            ? null
+                            : () {
+                                // TODO: Use stockId for sell mutation
+                                debugPrint("Sell stockId: $stockId, qty: $quantity");
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           padding: const EdgeInsets.symmetric(vertical: 16),
