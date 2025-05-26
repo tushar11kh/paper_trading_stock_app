@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
+import 'package:graphql_flutter/graphql_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (token != null && token.isNotEmpty && userId != null && userId.isNotEmpty) {
       // Validate the token with the backend
-      final isValid = await _validateToken(token);
+      final isValid = await _validateToken(token, userId);
 
       if (isValid) {
         context.go('/'); // Navigate to the home screen
@@ -44,23 +44,47 @@ class _SplashScreenState extends State<SplashScreen> {
     context.go('/login');
   }
 
-  Future<bool> _validateToken(String token) async {
+  Future<bool> _validateToken(String token, String userId) async {
     try {
-      // Example: Make a request to the backend to validate the token
-      final response = await http.post(
-        Uri.parse('http://localhost:4000/validate-token'),
-        headers: {'Authorization': 'Bearer $token'},
+      final HttpLink httpLink = HttpLink('http://localhost:4000/graphql');
+
+      final AuthLink authLink = AuthLink(
+        getToken: () => 'Bearer $token',
       );
 
-      if (response.statusCode == 200) {
-        return true; // Token is valid
-      }
-    } catch (e) {
-      // Handle errors (e.g., network issues)
-      print('Token validation error: $e');
-    }
+      final Link link = authLink.concat(httpLink);
 
-    return false; // Token is invalid
+      final GraphQLClient client = GraphQLClient(
+        cache: GraphQLCache(),
+        link: link,
+      );
+
+      final QueryOptions options = QueryOptions(
+        document: gql(r'''
+          query GetUserDetails($userId: ID!) {
+            getUserDetails(userId: $userId) {
+              id
+              email
+            }
+          }
+        '''),
+        variables: {
+          'userId': userId,
+        },
+      );
+
+      final QueryResult result = await client.query(options);
+
+      if (result.hasException) {
+        print('Token validation error: ${result.exception}');
+        return false;
+      }
+
+      return result.data?['getUserDetails'] != null;
+    } catch (e) {
+      print('Token validation error: $e');
+      return false;
+    }
   }
 
   @override

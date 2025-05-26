@@ -51,6 +51,12 @@ export const stockTypeDef = gql`
     getStockHistory(symbol: String!, timeframe: String!): [StockHistory!]!
     getPortfolio(userId: ID!): [Portfolio!]!
     getPendingOrders: [Order!]!
+    getHistoricalPrices(stockId: ID!): [StockPrice!]!
+  }
+
+  type StockPrice {
+    timestamp: String!
+    price: Float!
   }
 
   type Mutation {

@@ -80,7 +80,27 @@ export const stockResolvers = {
         console.error('Error fetching stock history:', error);
         return [];
       }
-    }
+    },
+
+    getHistoricalPrices: async (_: unknown, { stockId }: { stockId: number }) => {
+      try {
+        const result = await pool.query(
+          `SELECT timestamp, price
+           FROM stock_prices
+           WHERE stock_id = $1
+           ORDER BY timestamp DESC`,
+          [stockId]
+        );
+
+        return result.rows.map(row => ({
+          timestamp: row.timestamp,
+          price: Number(row.price),
+        }));
+      } catch (error) {
+        console.error('Error fetching historical prices:', error);
+        return [];
+      }
+    },
   },
   Subscription: {
     priceUpdate: {

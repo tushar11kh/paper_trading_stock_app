@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:PaperTradeApp/features/stock_detail/ui/stock_detail_screen.dart';
 
 class StockCard extends StatefulWidget {
   final String name;
@@ -45,7 +46,8 @@ class _StockCardState extends State<StockCard> {
     }
   ''');
 
-  void _handlePriceUpdate(double newPrice) {
+  void _handlePriceUpdate(Map<String, dynamic> data) {
+    final newPrice = data['price']?.toDouble() ?? _currentPrice;
     if (newPrice == _currentPrice) return;
 
     // Set initial price only once
@@ -73,74 +75,92 @@ class _StockCardState extends State<StockCard> {
     return "${isPositive ? "+" : ""}${percent.toStringAsFixed(2)}%";
   }
 
+  void _navigateToDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StockDetailScreen(
+          symbol: widget.name,
+          company: widget.company,
+          initialPrice: _currentPrice,
+          initialChange: widget.change,
+          isPositive: widget.isPositive,
+        ),
+      ),
+    );
+  }
+
   Widget buildCard() {
     final percentColor = _currentPrice >= (_initialPrice ?? 0) ? Colors.green : Colors.red;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Symbol and Name
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => _navigateToDetail(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Symbol and Name
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.company,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+
+            // Price and % Change
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  widget.name,
-                  style: const TextStyle(
+                  "₹${_currentPrice.toStringAsFixed(2)}",
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
+                    color: _flashColor ?? Colors.black,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.company,
-                  style: const TextStyle(
-                    color: Colors.grey,
+                  _getPercentageChange(),
+                  style: TextStyle(
                     fontSize: 12,
+                    color: percentColor,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ),
-
-          // Price and % Change
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "₹${_currentPrice.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: _flashColor ?? Colors.black,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _getPercentageChange(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: percentColor,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -158,9 +178,9 @@ class _StockCardState extends State<StockCard> {
       ),
       builder: (result) {
         if (result.data != null) {
-          final newPrice = result.data!['priceUpdate']['price']?.toDouble() ?? _currentPrice;
+          final priceData = result.data!['priceUpdate'] as Map<String, dynamic>;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _handlePriceUpdate(newPrice);
+            _handlePriceUpdate(priceData);
           });
         }
         return buildCard();

@@ -4,8 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:PaperTradeApp/common/widgets/stock_card.dart';
 import 'package:PaperTradeApp/features/home/logic/stock_gains_card.dart';
-import 'package:PaperTradeApp/features/home/logic/watchlist_section.dart';
-import 'package:PaperTradeApp/features/stocks/stock_detail_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,13 +24,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchRandomStocks() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/stocks'));
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/stocks'),
+      );
       if (response.statusCode == 200) {
         final List<dynamic> stocks = json.decode(response.body);
         if (stocks.isNotEmpty) {
-          final randomIndexes = _getUniqueRandomIndexes(stocks.length, 4);
+          final randomIndexes = _getUniqueRandomIndexes(stocks.length, 10);
           setState(() {
-            randomStocks = randomIndexes.map((index) => stocks[index] as Map<String, dynamic>).toList();
+            randomStocks = randomIndexes
+                .map((index) => stocks[index] as Map<String, dynamic>)
+                .toList();
             isLoading = false;
           });
         }
@@ -43,9 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching stock data: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching stock data: $e')));
     }
   }
 
@@ -83,112 +85,99 @@ class _HomeScreenState extends State<HomeScreen> {
               isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : randomStocks.isNotEmpty
-                      ? Column(
+                  ? Column(
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => StockDetailPage(
-                                            symbol: randomStocks[0]['symbol'],
-                                            company: randomStocks[0]['name'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: StockCard(
-                                      name: randomStocks[0]['symbol'],
-                                      company: randomStocks[0]['name'],
-                                      fallbackPrice: (randomStocks[0]['price'] as num).toDouble(),
-                                      change: randomStocks[0]['change'] ?? "+0.00%",
-                                      isPositive: randomStocks[0]['change']?.startsWith('+') ?? true,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => StockDetailPage(
-                                            symbol: randomStocks[1]['symbol'],
-                                            company: randomStocks[1]['name'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: StockCard(
-                                      name: randomStocks[1]['symbol'],
-                                      company: randomStocks[1]['name'],
-                                      fallbackPrice: (randomStocks[1]['price'] as num).toDouble(),
-                                      change: randomStocks[1]['change'] ?? "+0.00%",
-                                      isPositive: randomStocks[1]['change']?.startsWith('+') ?? true,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Expanded(
+                              child: StockCard(
+                                name: randomStocks[0]['symbol'],
+                                company: randomStocks[0]['name'],
+                                fallbackPrice: randomStocks[0]['price'],
+                                change: randomStocks[0]['change'] ?? "+0.00%",
+                                isPositive:
+                                    randomStocks[0]['change']?.startsWith(
+                                      '+',
+                                    ) ??
+                                    true,
+                              ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => StockDetailPage(
-                                            symbol: randomStocks[2]['symbol'],
-                                            company: randomStocks[2]['name'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: StockCard(
-                                      name: randomStocks[2]['symbol'],
-                                      company: randomStocks[2]['name'],
-                                      fallbackPrice: (randomStocks[2]['price'] as num).toDouble(),
-                                      change: randomStocks[2]['change'] ?? "+0.00%",
-                                      isPositive: randomStocks[2]['change']?.startsWith('+') ?? true,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => StockDetailPage(
-                                            symbol: randomStocks[3]['symbol'],
-                                            company: randomStocks[3]['name'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: StockCard(
-                                      name: randomStocks[3]['symbol'],
-                                      company: randomStocks[3]['name'],
-                                      fallbackPrice: (randomStocks[3]['price'] as num).toDouble(),
-                                      change: randomStocks[3]['change'] ?? "+0.00%",
-                                      isPositive: randomStocks[3]['change']?.startsWith('+') ?? true,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: StockCard(
+                                name: randomStocks[1]['symbol'],
+                                company: randomStocks[1]['name'],
+                                fallbackPrice: randomStocks[1]['price'],
+                                change: randomStocks[1]['change'] ?? "+0.00%",
+                                isPositive:
+                                    randomStocks[1]['change']?.startsWith(
+                                      '+',
+                                    ) ??
+                                    true,
+                              ),
                             ),
                           ],
-                        )
-                      : const Text("No stock data available"),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: StockCard(
+                                name: randomStocks[2]['symbol'],
+                                company: randomStocks[2]['name'],
+                                fallbackPrice: randomStocks[2]['price'],
+                                change: randomStocks[2]['change'] ?? "+0.00%",
+                                isPositive:
+                                    randomStocks[2]['change']?.startsWith(
+                                      '+',
+                                    ) ??
+                                    true,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: StockCard(
+                                name: randomStocks[3]['symbol'],
+                                company: randomStocks[3]['name'],
+                                fallbackPrice: randomStocks[3]['price'],
+                                change: randomStocks[3]['change'] ?? "+0.00%",
+                                isPositive:
+                                    randomStocks[3]['change']?.startsWith(
+                                      '+',
+                                    ) ??
+                                    true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : const Text("No stock data available"),
               const SizedBox(height: 24),
-              const WatchlistSection(),
+              const Text(
+                "Watchlist",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              if (!isLoading && randomStocks.length > 7) 
+                StockCard(
+                  name: randomStocks[7]['symbol'],
+                  company: randomStocks[7]['name'],
+                  fallbackPrice: randomStocks[7]['price'],
+                  change: randomStocks[7]['change'] ?? "+0.00%",
+                  isPositive:
+                      randomStocks[7]['change']?.startsWith('+') ?? true,
+                ),
+              const SizedBox(height: 12),
+              if (!isLoading && randomStocks.length > 9)
+                StockCard(
+                  name: randomStocks[9]['symbol'],
+                  company: randomStocks[9]['name'],
+                  fallbackPrice: randomStocks[9]['price'],
+                  change: randomStocks[9]['change'] ?? "+0.00%",
+                  isPositive:
+                      randomStocks[9]['change']?.startsWith('+') ?? true,
+                ),
             ],
           ),
         ),
