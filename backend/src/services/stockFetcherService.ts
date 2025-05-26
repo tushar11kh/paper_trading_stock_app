@@ -8,7 +8,7 @@ async function fetchAndPublishStockPrices() {
   try {
     const response = await axios.get(`${BASE_URL}/stocks`);
     const stocks = response.data;
-    console.log('📡 Fetched stocks:', stocks.length);
+    // console.log('📡 Fetched stocks:', stocks.length);
 
     for (const stock of stocks) {
       if (!stock?.symbol || !stock?.price) {
@@ -39,7 +39,7 @@ async function fetchAndPublishStockPrices() {
         priceUpdate: stockData
       });
     }
-    console.log('✅ Prices updated and published');
+    // console.log('✅ Prices updated and published');
   } catch (error) {
     console.error('❌ Fetch error:', error);
   }

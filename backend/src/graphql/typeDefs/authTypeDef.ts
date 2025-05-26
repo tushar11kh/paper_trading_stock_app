@@ -26,4 +26,8 @@ export const authTypeDef = gql`
     register(input: RegisterInput!): AuthPayload!
     login(input: LoginInput!): AuthPayload!
   }
+  
+  type Query {
+    getUserDetails(userId: ID!): User!
+  }
 `; 

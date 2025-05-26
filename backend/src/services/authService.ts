@@ -23,7 +23,7 @@ export class AuthService {
 
     // Create new user
     const result = await pool.query(
-      'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email, balance',
+      'INSERT INTO users (email, password, balance) VALUES ($1, $2, 90000.0) RETURNING id, email, balance',
       [email, hashedPassword]
     );
 
@@ -77,5 +77,18 @@ export class AuthService {
       console.error('Token verification error:', error);
       throw error;
     }
+  }
+
+  static async getUserById(userId: number): Promise<User> {
+    const result = await pool.query(
+      'SELECT id, email, balance FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('User not found');
+    }
+
+    return result.rows[0];
   }
 } 

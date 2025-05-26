@@ -1,6 +1,17 @@
 import { AuthService } from '../../services/authService';
 
 export const authResolvers = {
+    Query: {
+    getUserDetails: async (_: unknown, { userId }: { userId: number }) => {
+      try {
+        const user = await AuthService.getUserById(userId);
+        return user;
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+        throw error;
+      }
+    }
+  },
   Mutation: {
     register: async (_: unknown, { input }: { input: { email: string; password: string } }) => {
       const user = await AuthService.register(input.email, input.password);

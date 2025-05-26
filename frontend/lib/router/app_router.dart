@@ -1,0 +1,50 @@
+// router/app_router.dart
+import 'package:PaperTradeApp/features/auth/ui/login.dart';
+import 'package:PaperTradeApp/splashscreen.dart';
+import 'package:go_router/go_router.dart';
+
+import '../features/home/ui/home_screen.dart';
+import '../features/portfolio/ui/portfolio_screen.dart';
+import '../features/order/ui/order_screen.dart';
+import '../features/profile/ui/profile_screen.dart';
+import '../app.dart';
+
+final router = GoRouter(
+  initialLocation: '/splash',
+  routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/login',
+      name: 'login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    ShellRoute(
+      builder: (context, state, child) => PaperTradeApp(child: child),
+      routes: [
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/portfolio',
+          name: 'portfolio',
+          builder: (context, state) => const PortfolioScreen(),
+        ),
+        GoRoute(
+          path: '/order',
+          name: 'order',
+          builder: (context, state) => const OrderScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+      ],
+    ),
+  ],
+);
