@@ -51,6 +51,24 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     }
   ''');
 
+  static final _placeOrderMutation = gql(r'''
+    mutation($input: PlaceOrderInput!) {
+      placeOrder(input: $input) {
+        id
+        stock {
+          symbol
+          name
+          price
+        }
+        quantity
+        price
+        orderType
+        status
+        createdAt
+      }
+    }
+  ''');
+
   List<Map<String, dynamic>> historicalPrices = [];
   Timer? chartTimer;
 
@@ -196,6 +214,65 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     return oldestPrice > newestPrice ? Colors.red : Colors.green;
   }
 
+  Future<void> _placeOrder(OrderSide side) async {
+    if (stockId == null) return;
+
+    final client = await GraphQLConfig.initializeClient();
+    try {
+      final result = await client.mutate(
+        MutationOptions(
+          document: _placeOrderMutation,
+          variables: {
+            'input': {
+              'symbol': widget.symbol,
+              'quantity': quantity,
+              'orderType': 'MARKET',
+              'side': side.name,
+            }
+          },
+        ),
+      );
+
+      if (result.hasException) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result.exception?.graphqlErrors.first.message ?? "Unknown error"}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final order = result.data?['placeOrder'];
+      if (order != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${side.name} order placed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Refresh historical prices to show the latest data
+        await _fetchHistoricalPrices();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _buyStock() async {
+    await _placeOrder(OrderSide.BUY);
+  }
+
+  Future<void> _sellStock() async {
+    await _placeOrder(OrderSide.SELL);
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalAmount = currentPrice * quantity;
@@ -285,7 +362,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                             ),
                           ),
                           Text(
-                            '\$${currentPrice.toStringAsFixed(2)}',
+                            '\₹${currentPrice.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -371,7 +448,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                         ),
                       ),
                       Text(
-                        '\$${totalAmount.toStringAsFixed(2)}',
+                        '\₹${totalAmount.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -385,12 +462,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: stockId == null
-                            ? null
-                            : () {
-                                // TODO: Use stockId for buy mutation
-                                debugPrint("Buy stockId: $stockId, qty: $quantity");
-                              },
+                        onPressed: stockId == null ? null : _buyStock,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -410,12 +482,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: stockId == null
-                            ? null
-                            : () {
-                                // TODO: Use stockId for sell mutation
-                                debugPrint("Sell stockId: $stockId, qty: $quantity");
-                              },
+                        onPressed: stockId == null ? null : _sellStock,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -442,3 +509,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     );
   }
 }
+
+// Add enums for order types
+enum OrderType { MARKET, LIMIT }
+enum OrderSide { BUY, SELL }
