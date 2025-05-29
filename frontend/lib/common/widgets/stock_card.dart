@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:PaperTradeApp/features/stock_detail/ui/stock_detail_screen.dart';
+import 'package:PaperTradeApp/screens/stock_detail_screen.dart';
 
 class StockCard extends StatefulWidget {
   final String name;
@@ -75,20 +75,20 @@ class _StockCardState extends State<StockCard> {
     return "${isPositive ? "+" : ""}${percent.toStringAsFixed(2)}%";
   }
 
-  void _navigateToDetail(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StockDetailScreen(
-          symbol: widget.name,
-          company: widget.company,
-          initialPrice: _currentPrice,
-          initialChange: widget.change,
-          isPositive: widget.isPositive,
-        ),
+void _navigateToDetail(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => StockDetailScreen(
+        symbol: widget.name,
+        company: widget.company,
+        initialPrice: _initialPrice ?? _currentPrice, // Pass _initialPrice for consistency
+        initialChange: _getPercentageChange(), // Pass the calculated percentage change
+        isPositive: _getPercentageChange().startsWith('+'),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget buildCard() {
     final percentColor = _currentPrice >= (_initialPrice ?? 0) ? Colors.green : Colors.red;

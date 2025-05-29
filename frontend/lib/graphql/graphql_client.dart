@@ -7,6 +7,7 @@ class GraphQLConfig {
   );
 
   static final _secureStorage = FlutterSecureStorage();
+  
 
   static Future<GraphQLClient> initializeClient() async {
     // Retrieve the token from secure storage

@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'package:PaperTradeApp/core/graphql/graphql_client.dart';
+import 'package:PaperTradeApp/graphql/graphql_client.dart';
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:PaperTradeApp/core/graphql/graphql_client.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class StockDetailScreen extends StatefulWidget {
@@ -81,9 +80,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     isPricePositive = widget.isPositive;
     quantityController.text = quantity.toString();
     _fetchStockId().then((_) {
-      // Ensure the chart is updated immediately after fetching the stock ID
       _fetchHistoricalPrices().then((_) {
-        // Start periodic fetching only after the first fetch is complete
         _fetchHistoricalPricesPeriodically();
       });
     });
@@ -98,7 +95,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   }
 
   void _fetchHistoricalPricesPeriodically() {
-    // Fetch immediately, then every 5 minutes
     _fetchHistoricalPrices();
     chartTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _fetchHistoricalPrices();
@@ -126,7 +122,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
       ),
     );
     if (result.hasException) {
-      debugPrint('Error fetching historical prices: \\${result.exception}');
+      debugPrint('Error fetching historical prices: \${result.exception}');
       return;
     }
     final List<dynamic> prices = result.data?['getHistoricalPrices'] ?? [];
@@ -208,7 +204,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   }
 
   Color _getChartLineColor() {
-    if (historicalPrices.isEmpty) return Colors.blue; // Default color if no data
+    if (historicalPrices.isEmpty) return Colors.blue;
     final oldestPrice = historicalPrices.first['price'] as double;
     final newestPrice = historicalPrices.last['price'] as double;
     return oldestPrice > newestPrice ? Colors.red : Colors.green;
@@ -251,8 +247,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        
-        // Refresh historical prices to show the latest data
         await _fetchHistoricalPrices();
       }
     } catch (e) {
@@ -310,7 +304,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // --- Line Chart ---
                 SizedBox(
                   height: 200,
                   child: historicalPrices.isEmpty
@@ -327,7 +320,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                                     FlSpot(i.toDouble(), historicalPrices[i]['price'] as double),
                                 ],
                                 isCurved: true,
-                                color: _getChartLineColor(), // Use the dynamic color
+                                color: _getChartLineColor(),
                                 barWidth: 2,
                                 dotData: FlDotData(show: false),
                               ),
@@ -510,6 +503,5 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   }
 }
 
-// Add enums for order types
 enum OrderType { MARKET, LIMIT }
 enum OrderSide { BUY, SELL }

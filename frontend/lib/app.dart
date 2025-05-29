@@ -2,11 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'core/utils/bottom_nav_controller.dart';
-import 'features/home/ui/home_screen.dart';
-import 'features/portfolio/ui/portfolio_screen.dart';
-import 'features/order/ui/order_screen.dart';
-import 'features/profile/ui/profile_screen.dart';
+import 'providers/bottom_nav_controller.dart';
+import 'screens/home_screen.dart';
+import 'screens/portfolio_screen.dart';
+import 'screens/order_screen.dart';
+import 'screens/profile_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+
 
 class PaperTradeApp extends ConsumerWidget {
   final Widget child;
@@ -32,7 +35,7 @@ class PaperTradeApp extends ConsumerWidget {
         currentIndex: currentIndex,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
-        onTap: (index) {
+        onTap: (index) async{
           ref.read(bottomNavIndexProvider.notifier).state = index;
           switch (index) {
             case 0:
@@ -46,6 +49,9 @@ class PaperTradeApp extends ConsumerWidget {
               break;
             case 3:
               context.go('/profile');
+                 final secureStorage = const FlutterSecureStorage();
+                 final userId = await secureStorage.read(key: 'auth_user_id');
+               print("User id: $userId");
               break;
           }
         },

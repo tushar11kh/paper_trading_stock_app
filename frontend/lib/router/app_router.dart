@@ -1,12 +1,12 @@
 // router/app_router.dart
-import 'package:PaperTradeApp/features/auth/ui/login.dart';
-import 'package:PaperTradeApp/splashscreen.dart';
+import 'package:PaperTradeApp/screens/login.dart';
+import 'package:PaperTradeApp/screens/splashscreen.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/home/ui/home_screen.dart';
-import '../features/portfolio/ui/portfolio_screen.dart';
-import '../features/order/ui/order_screen.dart';
-import '../features/profile/ui/profile_screen.dart';
+import '../screens/home_screen.dart';
+import '../screens/portfolio_screen.dart';
+import '../screens/order_screen.dart';
+import '../screens/profile_screen.dart';
 import '../app.dart';
 
 final router = GoRouter(

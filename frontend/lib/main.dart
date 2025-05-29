@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'router/app_router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,9 @@ void main() async {
     link: link,
   );
 
+  final secureStorage = const FlutterSecureStorage();
+  final userId = await secureStorage.read(key: 'auth_user_id');
+  
   runApp(
     ProviderScope(
       child: GraphQLProvider(
